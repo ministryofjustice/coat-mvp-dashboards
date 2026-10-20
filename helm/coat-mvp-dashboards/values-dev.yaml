@@ -32,3 +32,11 @@ app:
           ATHENA_ROLE: ""
           ATHENA_OUTPUT_LOCATION: ""
           ATHENA_WORKGROUP: ""
+
+      demo_dashboard:
+        name: "demo-dashboard"
+        replicaCount: 1
+        serviceAccountName: "coat-coh-dashboard-dev"
+        image:
+          repository: ""
+          tag: ""
