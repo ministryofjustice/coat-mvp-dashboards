@@ -2,11 +2,16 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+from auth import require_auth0_login
+
+
 st.set_page_config(
     page_title="Car Color Dashboard",
     page_icon="🚗",
     layout="wide",
 )
+
+require_auth0_login()
 
 st.title("🚗 Car Color Dashboard")
 st.caption("Explore the distribution of car colors.")
