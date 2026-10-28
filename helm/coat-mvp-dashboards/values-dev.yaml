@@ -36,7 +36,7 @@ app:
       demo_dashboard:
         name: "demo-dashboard"
         replicaCount: 1
-        serviceAccountName: "coat-coh-dashboard-dev"
+        serviceAccountName: "mvp-dashboards-sa"
         image:
           repository: ""
           tag: ""
