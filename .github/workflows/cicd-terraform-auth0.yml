@@ -53,13 +53,13 @@ jobs:
       - name: Configure AWS credentials for Terraform
         uses: aws-actions/configure-aws-credentials@486457dc46e82b9a740ca0ef1dac6a38a3fc272d  # v4.0.2
         with:
-          role-to-assume: ${{ matrix.environment == 'production' && secrets.PROD_S3_ROLE_TO_ASSUME || secrets.DEV_S3_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ matrix.environment == 'production' && secrets.PROD_MVP_DASHBOARDS_S3_ROLE_TO_ASSUME || secrets.DEV_MVP_DASHBOARDS_S3_ROLE_TO_ASSUME }}
           aws-region: eu-west-2
 
       - name: Terraform Init
         id: init
         run: |
-          terraform init -backend-config="bucket=${{ matrix.environment == 'production' && vars.PROD_S3_BUCKET_NAME || vars.DEV_S3_BUCKET_NAME }}" -input=false -no-color
+          terraform init -backend-config="bucket=${{ matrix.environment == 'production' && vars.PROD_MVP_DASHBOARDS_S3_BUCKET_NAME || vars.DEV_MVP_DASHBOARDS_S3_BUCKET_NAME }}" -input=false -no-color
 
       - name: Terraform Validate
         id: validate
@@ -118,13 +118,13 @@ jobs:
       - name: Configure AWS credentials for Terraform
         uses: aws-actions/configure-aws-credentials@486457dc46e82b9a740ca0ef1dac6a38a3fc272d  # v4.0.2
         with:
-          role-to-assume: ${{ matrix.environment == 'production' && secrets.PROD_S3_ROLE_TO_ASSUME || secrets.DEV_S3_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ matrix.environment == 'production' && secrets.PROD_MVP_DASHBOARDS_S3_ROLE_TO_ASSUME || secrets.DEV_MVP_DASHBOARDS_S3_ROLE_TO_ASSUME }}
           aws-region: eu-west-2
 
       - name: Terraform Init
         id: init
         run: |
-          terraform init -backend-config="bucket=${{ matrix.environment == 'production' && vars.PROD_S3_BUCKET_NAME || vars.DEV_S3_BUCKET_NAME }}" -input=false -no-color
+          terraform init -backend-config="bucket=${{ matrix.environment == 'production' && vars.PROD_MVP_DASHBOARDS_S3_BUCKET_NAME || vars.DEV_MVP_DASHBOARDS_S3_BUCKET_NAME }}" -input=false -no-color
 
       - name: Terraform Validate
         id: validate

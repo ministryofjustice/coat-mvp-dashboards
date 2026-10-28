@@ -7,9 +7,9 @@ on:
 env:
   # A majority of the secrets generated here come from the cloud-platform-environments repository.
   KUBE_CLUSTER: ${{ secrets.KUBE_CLUSTER }}
-  KUBE_NAMESPACE: ${{ secrets.DEV_KUBE_NAMESPACE }}
-  KUBE_CERT: ${{ secrets.DEV_KUBE_CERT }}
-  KUBE_TOKEN: ${{ secrets.DEV_KUBE_TOKEN }}
+  KUBE_NAMESPACE: ${{ secrets.DEV_MVP_DASHBOARDS_KUBE_NAMESPACE }}
+  KUBE_CERT: ${{ secrets.DEV_MVP_DASHBOARDS_KUBE_CERT }}
+  KUBE_TOKEN: ${{ secrets.DEV_MVP_DASHBOARDS_KUBE_TOKEN }}
 
   IMAGE_TAG: ${{ github.sha }}
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY_URL }}
