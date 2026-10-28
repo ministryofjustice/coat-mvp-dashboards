@@ -51,7 +51,7 @@ def get_application_url() -> str:
 
     APP_BASE_URL should normally be injected by Helm, for example:
 
-        https://coat-coh-dashboard-dev.cloud-platform.service.justice.gov.uk
+        https://coat-mvp-dashboards-dev.cloud-platform.service.justice.gov.uk
 
     When APP_BASE_URL is not set, the URL is derived from forwarded headers.
     """

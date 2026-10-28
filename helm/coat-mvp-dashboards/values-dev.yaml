@@ -1,6 +1,6 @@
 app:
   ingress:
-    primaryHost: "coat-coh-dashboard-dev.cloud-platform.service.justice.gov.uk"
+    primaryHost: "coat-mvp-dashboards-dev.cloud-platform.service.justice.gov.uk"
 
   service:
     port: 80
@@ -15,7 +15,7 @@ app:
       coh_dashboard:
         name: "coh-dashboard"
         replicaCount: 1
-        serviceAccountName: "coat-coh-dashboard-dev"
+        serviceAccountName: "mvp-dashboards-sa"
         image:
           repository: ""
           tag: ""
@@ -23,7 +23,7 @@ app:
       showback_report:
         name: "showback-report"
         replicaCount: 1
-        serviceAccountName: "coat-showback-mvp-dev"
+        serviceAccountName: "mvp-dashboards-sa"
         image:
           repository: ""
           tag: ""

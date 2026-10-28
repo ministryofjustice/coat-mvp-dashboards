@@ -19,19 +19,16 @@ run:
 stop:
 	docker rm -f $(DASHBOARD)
 
-deploy-sa:
-	kubectl apply -f helm/ad-hoc/serviceaccount.yaml -n coat-coh-dashboard-dev
-
 helm-deploy:
-	helm upgrade coat-coh-dashboard \
-        helm/coat-coh-dashboard \
+	helm upgrade coat-mvp-dashboards \
+        helm/coat-mvp-dashboards \
         --install \
         --force \
 		--server-side=false \
         --wait \
         --timeout 10m \
-        --namespace coat-coh-dashboard-dev \
-        --values=helm/coat-coh-dashboard/values-dev.yaml \
+        --namespace coat-mvp-dashboards-dev \
+        --values=helm/coat-mvp-dashboards/values-dev.yaml \
         --set app.deployment.dashboards.coh_dashboard.image.repository=levgorbunov1/coh_dashboard \
         --set app.deployment.dashboards.coh_dashboard.image.tag=latest \
 		--set app.deployment.dashboards.showback_report.image.repository=levgorbunov1/showback_report \
@@ -41,10 +38,10 @@ helm-deploy:
         --set app.deployment.env.AUTH0_CLIENT_SECRET="${AUTH0_CLIENT_SECRET}"
 
 helm-template:
-	helm template coat-coh-dashboard \
-        helm/coat-coh-dashboard \
-        --namespace coat-coh-dashboard-dev \
-        --values=helm/coat-coh-dashboard/values-dev.yaml \
+	helm template coat-mvp-dashboards \
+        helm/coat-mvp-dashboards \
+        --namespace coat-mvp-dashboards-dev \
+        --values=helm/coat-mvp-dashboards/values-dev.yaml \
         --set app.deployment.dashboards.coh_dashboard.image.repository=levgorbunov1/coh_dashboard \
         --set app.deployment.dashboards.coh_dashboard.image.tag=latest \
 		--set app.deployment.dashboards.showback_report.image.repository=levgorbunov1/showback_report \
@@ -54,13 +51,4 @@ helm-template:
         --set app.deployment.env.AUTH0_CLIENT_SECRET="${AUTH0_CLIENT_SECRET}"
 
 helm-uninstall:
-	helm uninstall coat-coh-dashboard --namespace coat-coh-dashboard-dev
-
-push-dockerhub:
-	docker build -t levgorbunov1/coat-coh-dashboard:latest .
-	docker login
-	docker buildx build \
-		--platform linux/amd64 \
-		--build-arg DASHBOARD=$(DASHBOARD) \
-		-t levgorbunov1/$(DASHBOARD):latest \
-		--push .
+	helm uninstall coat-mvp-dashboards --namespace coat-mvp-dashboards-dev
