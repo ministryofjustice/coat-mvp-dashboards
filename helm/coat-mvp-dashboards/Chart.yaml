@@ -1,5 +1,5 @@
 apiVersion: v2
-name: coat-coh-dashboard
+name: coat-mvp-dashboards
 description: A Helm chart for Kubernetes
 
 type: application
