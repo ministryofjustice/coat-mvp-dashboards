@@ -67,7 +67,7 @@ jobs:
 
       - name: Deploy helm chart to dev
         run: |
-          helm upgrade coat-coh-dashboard \
+          helm upgrade coat-mvp-dashboards \
             helm/coat-mvp-dashboards \
             --install \
             --force \
