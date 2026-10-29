@@ -3,7 +3,7 @@ terraform {
     acl          = "private"
     encrypt      = true
     use_lockfile = true
-    key          = "terraform/auth0/coat-coh-dashboard/terraform.tfstate"
+    key          = "terraform/terraform.tfstate"
     region       = "eu-west-2"
   }
   required_providers {
