@@ -71,7 +71,7 @@ resource "auth0_client_grant" "auth0_actions_management_client_grant" {
   subject_type                = "client"
 }
 
-resource "auth0_client" "coat_coh_dashboard" {
+resource "auth0_client" "coat_mvp_dashboards" {
   allowed_clients                                      = []
   allowed_logout_urls                                  = var.environment == "development" ? ["https://${var.webapp_domain}/coh-dashboard/", "https://${var.webapp_domain}/showback-report/", "https://localhost:8501/", "http://localhost:8501/"] : ["https://${var.webapp_domain}/coh-dashboard/", "https://${var.webapp_domain}/showback-report/"]
   allowed_origins                                      = []
@@ -93,7 +93,7 @@ resource "auth0_client" "coat_coh_dashboard" {
   is_first_party                                       = true
   is_token_endpoint_ip_header_trusted                  = false
   logo_uri                                             = null
-  name                                                 = "COAT COH Dashboard"
+  name                                                 = "COAT MVP Dashboards"
   oidc_conformant                                      = true
   organization_discovery_methods                       = []
   organization_require_behavior                        = null
@@ -140,7 +140,7 @@ resource "auth0_client" "coat_coh_dashboard" {
   }
 }
 
-resource "auth0_client_credentials" "coat_coh_dashboard" {
+resource "auth0_client_credentials" "coat_mvp_dashboards" {
   authentication_method    = "client_secret_post"
-  client_id                = auth0_client.coat_coh_dashboard.client_id
+  client_id                = auth0_client.coat_mvp_dashboards.client_id
 }
