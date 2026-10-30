@@ -117,5 +117,5 @@ resource "auth0_connection" "github" {
 
 resource "auth0_connection_clients" "github" {
   connection_id   = auth0_connection.github.id
-  enabled_clients = [auth0_client.coat_coh_dashboard.client_id]
+  enabled_clients = [auth0_client.coat_mvp_dashboards.client_id]
 }
