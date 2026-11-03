@@ -2,7 +2,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-
+from services.athena_service import AthenaService
 from auth import require_auth0_login
 from config import APP_ENV, DASHBOARD_NAME
 from hosting_data import MissingColumnsError, read_hosting_csv
@@ -38,20 +38,15 @@ st.caption(
     "Net cost, excluding tax, discount and fee lines."
 )
 
-
-@st.cache_data
-def load_hosting_csv(uploaded_file):
-    return read_hosting_csv(uploaded_file)
-
-
 # -----------------------------
 # Data load
 # -----------------------------
-csv_file = manual_file_upload()
+
+athena_service = AthenaService()
 
 try:
-    with st.spinner("Loading and validating the Hosting CSV..."):
-        df = load_hosting_csv(csv_file)
+    with st.spinner("Loading your data..."):
+        df = athena_service.run_query_to_df("cloud_optimisation_datamarts", "SELECT * FROM fct_net_unblended_cost_categorised;")
 except MissingColumnsError as exc:
     st.error("The CSV is missing these columns:")
     st.write(exc.missing)
