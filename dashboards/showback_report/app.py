@@ -5,7 +5,6 @@ import streamlit as st
 from services.athena_service import AthenaService
 from auth import require_auth0_login
 from config import APP_ENV, DASHBOARD_NAME
-from hosting_data import MissingColumnsError, read_hosting_csv
 from hosting_report import (
     ALL_BUSINESS_UNITS,
     filter_view,
@@ -44,19 +43,12 @@ st.caption(
 
 athena_service = AthenaService()
 
-try:
-    with st.spinner("Loading your data..."):
-        df = athena_service.run_query_to_df("cloud_optimisation_datamarts", "SELECT * FROM fct_net_unblended_cost_categorised;")
-except MissingColumnsError as exc:
-    st.error("The CSV is missing these columns:")
-    st.write(exc.missing)
-    st.stop()
-except ValueError as exc:
-    st.error(f"Could not read the CSV: {exc}")
-    st.stop()
+
+with st.spinner("Loading your data..."):
+    df = athena_service.run_query_to_df("cloud_optimisation_datamarts", "SELECT * FROM fct_net_unblended_cost_categorised;")
 
 if df.empty:
-    st.warning("The uploaded CSV contains no rows.")
+    st.warning("The dataframs is empty.")
     st.stop()
 
 # -----------------------------
@@ -307,7 +299,7 @@ with tab_ytd:
     if ytd_missing:
         st.info(
             f"Full YTD spend is not available. Missing months for this selection: {', '.join(ytd_missing)}. "
-            "It will populate when data for these months is included in the uploaded CSV. Missing months are not treated as zero."
+            "It will populate when data for these months is included in the Athena table. Missing months are not treated as zero."
         )
         st.metric("Available-month subtotal (USD, partial)", f"${ytd['spend_usd'].sum():,.2f}")
     else:
@@ -317,7 +309,7 @@ with tab_ytd:
         f"Financial-year monthly spend through {month}, {business_unit}; unavailable months are blank.",
         "year-to-date",
     )
-    st.caption("Based on rows in the uploaded CSV; month availability does not confirm that an export contains all charges. Budget comparison is not available: no budget data has been supplied.")
+    st.caption("Based on rows in the data from Athena; month availability does not confirm that an export contains all charges. Budget comparison is not available: no budget data has been supplied.")
 
 with tab_trend:
     st.subheader("12-month spend trend")
@@ -327,7 +319,7 @@ with tab_trend:
         st.info(
             f"Partial history: {12 - len(trend_missing)} of 12 months available. "
             f"Missing months for this selection: {', '.join(trend_missing)}. "
-            "The trend will populate as more months are included in the uploaded CSV; gaps are not zero spend."
+            "The trend will populate as more months are included in the Athena table; gaps are not zero spend."
         )
     if trend["spend_usd"].notna().sum() < 2:
         st.info("A spend trend is not yet available: at least two months of spend data are needed. The available month is shown below.")
@@ -353,7 +345,7 @@ with tab_forecast:
     st.subheader("Forecasted spend")
     st.metric("Next 3 months forecast (USD)", "Not available")
     st.info(
-        "Forecast data is not available in the current CSV. This section will populate once a forecast data source "
+        "Forecast data is not available in the current Athena table. This section will populate once a forecast data source "
         "and an agreed forecasting method are connected. Additional actual-spend history alone does not provide a forecast."
     )
 
@@ -373,7 +365,7 @@ with tab_tags:
             "The table below contains the percentages and cost amounts.",
         )
     else:
-        st.info("Tagging coverage is unavailable: the selected rows have no non-zero taggable usage cost. It will populate when taggable usage-cost data is available in the uploaded CSV.")
+        st.info("Tagging coverage is unavailable: the selected rows have no non-zero taggable usage cost. It will populate when taggable usage-cost data is available in the Athena table.")
     report_table(
         coverage,
         f"Tagging coverage for {month}, {business_unit}: tagged and taggable usage cost in USD, and coverage percentage.",
@@ -460,7 +452,7 @@ with tab_type:
     )
     st.subheader("Per namespace")
     if view["tag_namespace"].str.strip().str.lower().isin(["", "untagged"]).any():
-        st.info("Some rows have no namespace attribution. Their costs remain in the untagged group and will be attributed when namespace tags are supplied in the CSV.")
+        st.info("Some rows have no namespace attribution. Their costs remain in the untagged group and will be attributed when namespace tags are supplied in the Athena table.")
     report_table(
         spend_by_namespace_service_type(view),
         f"Service breakdown for all namespaces in the current selection, {month}, {business_unit}: USD and share of each namespace's spend across the selected accounts.",
