@@ -31,6 +31,10 @@ spec:
         - name: {{ $dashboard.name | quote }}
           image: "{{ $dashboard.image.repository }}:{{ $dashboard.image.tag | default $root.Chart.AppVersion }}"
           imagePullPolicy: IfNotPresent
+          {{- with $dashboard.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
