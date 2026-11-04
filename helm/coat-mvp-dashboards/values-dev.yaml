@@ -27,6 +27,13 @@ app:
         image:
           repository: ""
           tag: ""
+        resources:
+          requests:
+            cpu: "2"
+            memory: "8Gi"
+          limits:
+            cpu: "2"
+            memory: "8Gi"
         env:
           ATHENA_REGION: ""
           ATHENA_ROLE: ""
