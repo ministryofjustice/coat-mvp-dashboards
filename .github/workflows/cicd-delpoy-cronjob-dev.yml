@@ -1,0 +1,95 @@
+name: Deploy cache-loader CronJob to development
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "cronjobs/showback_preload_cache/**"
+      - "helm/load-showback-cache-cronjob/**"
+
+concurrency:
+  group: showback-cache-loader-dev
+  cancel-in-progress: false
+
+env:
+  KUBE_CLUSTER: ${{ secrets.KUBE_CLUSTER }}
+  KUBE_NAMESPACE: ${{ secrets.DEV_MVP_DASHBOARDS_KUBE_NAMESPACE }}
+  KUBE_CERT: ${{ secrets.DEV_MVP_DASHBOARDS_KUBE_CERT }}
+  KUBE_TOKEN: ${{ secrets.DEV_MVP_DASHBOARDS_KUBE_TOKEN }}
+
+  IMAGE_TAG: ${{ github.sha }}-showback-preload-cache
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY_URL }}
+  ECR_REPOSITORY: ${{ vars.DEV_MVP_DASHBOARDS_ECR_REPOSITORY }}
+
+  ATHENA_REGION: ${{ secrets.ATHENA_REGION }}
+  ATHENA_ROLE: ${{ secrets.ATHENA_ROLE }}
+  ATHENA_OUTPUT_LOCATION: ${{ secrets.ATHENA_OUTPUT_LOCATION }}
+  ATHENA_WORKGROUP: ${{ secrets.ATHENA_WORKGROUP }}
+
+  REDIS_HOST: ${{ secrets.REDIS_HOST }}
+  REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+  REDIS_PORT: ${{ secrets.REDIS_PORT }}
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502  # v4.0.2
+        with:
+          role-to-assume: ${{ secrets.DEV_MVP_DASHBOARDS_ECR_ROLE_TO_ASSUME }}
+          aws-region: eu-west-2
+
+      - uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076  # v2.0.1
+
+      - run: |
+            docker build --file cronjobs/showback_preload_cache/Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+  deploy:
+    needs: build-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.31.0
+
+      - uses: azure/setup-helm@v4.3.1
+        with:
+          version: v3.17.3
+    
+      - name: Authenticate to the cluster
+        run: |
+          echo "${KUBE_CERT}" > ca.crt
+          kubectl config set-cluster ${KUBE_CLUSTER} --certificate-authority=./ca.crt --server=https://${KUBE_CLUSTER}
+          kubectl config set-credentials deploy-user --token=${KUBE_TOKEN}
+          kubectl config set-context ${KUBE_CLUSTER} --cluster=${KUBE_CLUSTER} --user=deploy-user --namespace=${KUBE_NAMESPACE}
+          kubectl config get-contexts
+          kubectl config use-context ${KUBE_CLUSTER}
+
+      - name: Deploy CronJob Helm chart
+        run: |
+          helm upgrade --install load-showback-cache-cronjob \
+            helm/load-showback-cache-cronjob \
+            --atomic \
+            --wait \
+            --timeout 10m \
+            --set-string image.repository="${ECR_REGISTRY}/${ECR_REPOSITORY}" \
+            --set-string image.tag="${IMAGE_TAG}" \
+            --set env.ATHENA_REGION="${ATHENA_REGION}" \
+            --set env.ATHENA_ROLE="${ATHENA_ROLE}" \
+            --set env.ATHENA_OUTPUT_LOCATION="${ATHENA_OUTPUT_LOCATION}" \
+            --set env.ATHENA_WORKGROUP="${ATHENA_WORKGROUP}" \
+            --set env.REDIS_HOST="${REDIS_HOST}" \
+            --set env.REDIS_PASSWORD="${REDIS_PASSWORD}" \
+            --set env.REDIS_PORT="${REDIS_PORT}"
