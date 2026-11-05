@@ -1,0 +1,5 @@
+apiVersion: v2
+name: load-showback-cache-cronjob
+description: Monthly Athena to Redis Parquet cache loader
+type: application
+version: 0.1.0

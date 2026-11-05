@@ -1,10 +1,12 @@
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from datetime import datetime, timezone
+from redis.exceptions import RedisError
 
-from services.athena_service import AthenaService
+from services.redis_service import RedisReadService, CacheUnavailable
 from auth import require_auth0_login
-from config import APP_ENV, DASHBOARD_NAME
+from config import APP_ENV, DASHBOARD_NAME, ATHENA_DATABASE, ATHENA_QUERY
 from hosting_report import (
     ALL_BUSINESS_UNITS,
     filter_view,
@@ -41,11 +43,33 @@ st.caption(
 # Data load
 # -----------------------------
 
-athena_service = AthenaService()
+redis_service = RedisReadService()
 
 
 with st.spinner("Loading your data..."):
-    df = athena_service.run_query_to_df("cloud_optimisation_datamarts", "SELECT * FROM fct_net_unblended_cost_categorised;")
+    try:
+        df = redis_service.run_query_to_df(ATHENA_DATABASE, ATHENA_QUERY)
+    except CacheUnavailable as error:
+        print("Cached dataset unavailable")
+        st.error(str(error))
+        st.stop()
+    except RedisError:
+        print("Redis access failed")
+        st.error(
+            "The data cache is unavailable. "
+            "Please contact the dashboard support team."
+        )
+        st.stop()
+
+refreshed_at = datetime.fromtimestamp(
+    redis_service.last_refreshed_at,
+    timezone.utc,
+)
+
+st.caption(
+    f"Data snapshot: {refreshed_at:%Y-%m-%d %H:%M UTC}. "
+    "Refreshed monthly."
+)
 
 if df.empty:
     st.warning("The dataframs is empty.")
