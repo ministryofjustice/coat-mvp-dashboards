@@ -38,14 +38,17 @@ class AthenaService:
         print(f"Running optimized Athena query: {query}")
 
         # wr.athena.read_sql_query handles execution, waiting, and Arrow download automatically
-        df = wr.athena.read_sql_query(
-            sql=query,
-            database=database,
-            workgroup=self.workgroup,
-            s3_output=self.output_location,
-            boto3_session=self.session,
-            ctas_approach=False
-        )
+        try:
+            df = wr.athena.read_sql_query(
+                sql=query,
+                database=database,
+                workgroup=self.workgroup,
+                s3_output=self.output_location,
+                boto3_session=self.session,
+                ctas_approach=False
+            )
+        except Exception as e:
+            print(f"Athena query execution failed: {e}")
 
         print(f"Query completed successfully. Loaded {len(df)} rows into DataFrame.")
         return df
