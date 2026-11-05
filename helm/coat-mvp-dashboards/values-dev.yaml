@@ -40,7 +40,7 @@ app:
           ATHENA_OUTPUT_LOCATION: ""
           ATHENA_WORKGROUP: ""
 
-          ATHENA_CACHE_TTL_SECONDS: 3024000
+          ATHENA_CACHE_TTL_SECONDS: "3024000"
           ATHENA_CACHE_DATABASE: "cloud_optimisation_datamarts"
           ATHENA_CACHE_QUERY: "SELECT * FROM fct_net_unblended_cost_categorised;"
 
