@@ -4,7 +4,7 @@ import streamlit as st
 from datetime import datetime, timezone
 from redis.exceptions import RedisError
 
-from services.redis_service import RedisService, CacheUnavailable
+from services.redis_service import RedisReadService, CacheUnavailable
 from auth import require_auth0_login
 from config import APP_ENV, DASHBOARD_NAME, ATHENA_DATABASE, ATHENA_QUERY
 from hosting_report import (
@@ -43,7 +43,7 @@ st.caption(
 # Data load
 # -----------------------------
 
-redis_service = RedisService()
+redis_service = RedisReadService()
 
 
 with st.spinner("Loading your data..."):

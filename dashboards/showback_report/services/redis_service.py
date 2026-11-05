@@ -26,7 +26,7 @@ def cache_key(database, query):
     return f"coat:athena:parquet:v1:{digest}"
 
 
-class RedisService:
+class RedisReadService:
     """Preserve the existing interface, but read exclusively from Redis."""
 
     def __init__(self):
