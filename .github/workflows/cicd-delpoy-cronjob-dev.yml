@@ -82,6 +82,7 @@ jobs:
         run: |
           helm upgrade --install load-showback-cache-cronjob \
             helm/load-showback-cache-cronjob \
+            -f helm/load-showback-cache-cronjob/values-dev.yaml \
             --atomic \
             --wait \
             --timeout 10m \
