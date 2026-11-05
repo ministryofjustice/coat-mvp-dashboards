@@ -3,7 +3,7 @@ import time
 
 from config import ATHENA_DATABASE, ATHENA_QUERY
 from services.athena_service import AthenaService
-from services.redis_service import RedisService
+from services.redis_service import RedisWriteService
 
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ def main():
     snapshot_started_at = time.time()
     timer = time.monotonic()
 
-    redis_service = RedisService()
+    redis_service = RedisWriteService()
 
     try:
         # Check Redis before incurring the Athena query cost.

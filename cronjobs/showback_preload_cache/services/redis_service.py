@@ -31,7 +31,7 @@ def cache_key(database, query):
     return f"coat:athena:parquet:v1:{digest}"
 
 
-class RedisService:
+class RedisWriteService:
     def __init__(self):
         self.client = Redis(
             host=REDIS_HOST,
