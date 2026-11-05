@@ -47,6 +47,11 @@ class AthenaService:
                 boto3_session=self.session,
                 ctas_approach=False
             )
+
+            query_metadata = getattr(df, "query_metadata", {})
+            query_id = query_metadata.get("QueryExecutionId") or getattr(query_metadata, "execution_id", None)
+            
+            print(f"Athena query succeeded. Query ID: {query_id}")
         except Exception as e:
             print(f"Athena query execution failed: {e}")
 
