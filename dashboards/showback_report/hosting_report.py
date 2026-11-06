@@ -68,7 +68,7 @@ _CONTAINS = {"Networking": "NetScaler", "Monitoring & management": "Grafana", "A
 
 
 def service_type(product_name: str) -> str:
-    name = product_name or ""
+    name = "" if pd.isna(product_name) else product_name
     for category in _CATEGORY_ORDER:
         if _EXACT_LOOKUP.get(name) == category:
             return category
