@@ -100,7 +100,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Build image
-        run: docker build --build-arg DASHBOARD=${{ matrix.dashboard }} --tag "${{ github.sha }}-${{ matrix.dashboard }}" .
+        run: docker build --build-arg DASHBOARD=${{ matrix.dashboard }} --tag "coat-mvp-dashboards:${{ matrix.dashboard }}" .
 
       # snyk/actions/docker runs `snyk test --file=Dockerfile`, which Snyk can
       # treat as a package manifest (SNYK-CLI-0000). `snyk container test`
@@ -111,7 +111,7 @@ jobs:
       - name: Scan container image
         id: scan
         continue-on-error: true
-        run: snyk container test "${{ github.sha }}-${{ matrix.dashboard }}" --file=Dockerfile --severity-threshold=high --fail-on=upgradable --sarif-file-output=snyk.sarif
+        run: snyk container test "coat-mvp-dashboards:${{ matrix.dashboard }}" --file=Dockerfile --severity-threshold=high --fail-on=upgradable --sarif-file-output=snyk.sarif
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
