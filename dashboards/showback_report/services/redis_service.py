@@ -42,8 +42,9 @@ class RedisReadService:
         password = REDIS_PASSWORD
 
         if not host or not password:
-            raise ValueError(
-                "Redis host and password must not be empty"
+            raise CacheUnavailable(
+                "Redis credentials not configured. "
+                "Set REDIS_HOST and REDIS_PASSWORD environment variables."
             )
 
         with Redis(
