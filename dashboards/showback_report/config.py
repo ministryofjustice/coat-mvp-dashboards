@@ -5,7 +5,7 @@ APP_ENV = os.getenv("APP_ENV")
 
 APP_BASE_URL = os.getenv("APP_BASE_URL")
 
-DASHBOARD_NAME = "Hosting Showback Report"
+DASHBOARD_NAME = "MOJ AWS Showback Report"
 
 # Auth0 config
 
