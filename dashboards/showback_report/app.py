@@ -328,16 +328,23 @@ with tab_trend:
     if trend["spend_usd"].notna().sum() < 2:
         st.info("A spend trend is not yet available: at least two months of spend data are needed. The available month is shown below.")
     else:
+        plotted = trend.loc[trend["spend_usd"].first_valid_index():]
+        plotted_months = plotted["billing_period"].tolist()
         trend_chart = px.line(
-            trend, x="billing_period", y="spend_usd", markers=True,
+            plotted, x="billing_period", y="spend_usd", markers=True,
             labels={"billing_period": "Billing month", "spend_usd": "Spend (USD)"},
             color_discrete_sequence=[BAR_COLOUR],
         )
-        trend_chart.update_traces(connectgaps=False)
-        trend_chart.update_xaxes(type="category", categoryorder="array", categoryarray=trend["billing_period"].tolist())
+        trend_chart.update_traces(connectgaps=False, cliponaxis=False)
+        trend_chart.update_xaxes(
+            type="category", categoryorder="array", categoryarray=plotted_months,
+            range=[-0.1, len(plotted_months) - 0.9],
+        )
+        trend_chart.update_yaxes(rangemode="tozero", tickprefix="$")
         st.plotly_chart(
             trend_chart, width="stretch",
-            alt=f"Monthly Hosting spend over 12 months ending {month}, {business_unit}. Missing months are gaps. Accounts: {account_scope}. Namespaces: {namespace_scope}.",
+            alt=f"Monthly Hosting spend from {plotted_months[0]} to {month}, {business_unit}. "
+            f"The y-axis starts at $0. Missing months are gaps. Accounts: {account_scope}. Namespaces: {namespace_scope}.",
         )
     report_table(
         trend,
