@@ -9,6 +9,7 @@ from math import isfinite
 import pandas as pd
 
 ALL_BUSINESS_UNITS = "All Business Units"
+ALL_SERVICE_AREAS = "All Service Areas"
 
 # (label shown on the page, column in the CSV)
 TAG_COLUMNS = [
@@ -83,11 +84,30 @@ def latest_month(df: pd.DataFrame) -> str:
     return max(df["billing_period"])
 
 
-def filter_view(df: pd.DataFrame, month: str, business_unit: str) -> pd.DataFrame:
-    view = df[df["billing_period"] == month]
+def filter_history(
+    df: pd.DataFrame,
+    service_area: str = ALL_SERVICE_AREAS,
+    business_unit: str = ALL_BUSINESS_UNITS,
+    accounts: list[str] | None = None,
+    namespaces: list[str] | None = None,
+) -> pd.DataFrame:
+    """Apply every sidebar filter except billing month, so history views stay consistent."""
+    if service_area != ALL_SERVICE_AREAS:
+        df = df[df["cost_category_service_area"] == service_area]
     if business_unit != ALL_BUSINESS_UNITS:
-        view = view[view["business_unit"] == business_unit]
-    return view
+        df = df[df["business_unit"] == business_unit]
+    if accounts:
+        df = df[df["account_name"].isin(accounts)]
+    if namespaces:
+        df = df[df["tag_namespace"].isin(namespaces)]
+    return df
+
+
+def filter_view(
+    df: pd.DataFrame, month: str, business_unit: str, service_area: str = ALL_SERVICE_AREAS
+) -> pd.DataFrame:
+    view = filter_history(df, service_area, business_unit)
+    return view[view["billing_period"] == month]
 
 
 def monthly_spend(view: pd.DataFrame, month: str, periods: int = 12) -> pd.DataFrame:

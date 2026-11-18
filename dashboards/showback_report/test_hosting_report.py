@@ -8,6 +8,8 @@ import pytest
 from hosting_data import read_hosting_csv
 from hosting_report import (
     ALL_BUSINESS_UNITS,
+    ALL_SERVICE_AREAS,
+    filter_history,
     filter_view,
     financial_year_spend,
     largest_with_remainder,
@@ -211,3 +213,20 @@ def test_spend_by_service_type(df):
     assert out == pytest.approx({"Compute": 1200.0, "Database": 340.0, "Networking": 10.0})
     per_acc = spend_by_account_service_type(view)
     assert per_acc.groupby("account_name")["pct_of_account"].sum().tolist() == pytest.approx([100.0] * 3)
+
+
+def test_service_area_filter_combines_with_other_filters():
+    rows = pd.DataFrame({
+        "billing_period": ["2026-08", "2026-09", "2026-09", "2026-09", "2026-09"],
+        "cost_category_service_area": ["Hosting", "Hosting", "Hosting", "Data", "Hosting"],
+        "business_unit": ["HMPPS", "HMPPS", "OCTO", "HMPPS", "HMPPS"],
+        "account_name": ["a", "a", "b", "a", "c"],
+        "tag_namespace": ["ns1", "ns1", "ns1", "ns1", "ns2"],
+        "spend_usd": [1.0, 2.0, 4.0, 8.0, 16.0],
+    })
+    assert filter_history(rows)["spend_usd"].sum() == 31
+    assert filter_history(rows, "Data")["spend_usd"].tolist() == [8]
+    assert filter_history(rows, "Hosting", "HMPPS", ["a"], ["ns1"])["spend_usd"].tolist() == [1, 2]
+    assert filter_view(rows, "2026-09", ALL_BUSINESS_UNITS, "Hosting")["spend_usd"].tolist() == [2, 4, 16]
+    assert filter_view(rows, "2026-09", "HMPPS")["spend_usd"].tolist() == [2, 8, 16]
+    assert filter_view(rows, "2026-09", "HMPPS", ALL_SERVICE_AREAS).equals(filter_view(rows, "2026-09", "HMPPS"))
