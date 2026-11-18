@@ -9,6 +9,8 @@ from auth import require_auth0_login
 from config import APP_ENV, DASHBOARD_NAME, ATHENA_DATABASE, ATHENA_QUERY
 from hosting_report import (
     ALL_BUSINESS_UNITS,
+    ALL_SERVICE_AREAS,
+    filter_history,
     filter_view,
     financial_year_spend,
     largest_with_remainder,
@@ -36,7 +38,7 @@ if APP_ENV:
 
 st.title(DASHBOARD_NAME)
 st.caption(
-    "Cost in the AWS cost category service_area = Hosting. "
+    "Cost grouped by the AWS Service Area cost category. "
     "Net cost, excluding tax, discount and fee lines."
 )
 
@@ -77,7 +79,7 @@ if df.empty:
     st.stop()
 
 # -----------------------------
-# Month and Business Unit filter
+# Month, Service Area and Business Unit filters
 # -----------------------------
 st.sidebar.header("Filters")
 months = sorted(df["billing_period"].unique(), reverse=True)
@@ -86,12 +88,19 @@ if st.session_state.get("billing_month") not in months:
 month = st.sidebar.selectbox("Billing month", months, key="billing_month")
 if len(months) == 1:
     st.sidebar.caption(f"Available reporting month: {month}")
-business_units = [ALL_BUSINESS_UNITS] + sorted(df.loc[df["billing_period"] == month, "business_unit"].unique())
+month_rows = df[df["billing_period"] == month]
+service_areas = [ALL_SERVICE_AREAS] + sorted(month_rows["cost_category_service_area"].unique())
+if st.session_state.get("service_area") not in service_areas:
+    st.session_state["service_area"] = ALL_SERVICE_AREAS
+service_area = st.sidebar.selectbox("Service Area", service_areas, key="service_area")
+business_units = [ALL_BUSINESS_UNITS] + sorted(
+    filter_view(df, month, ALL_BUSINESS_UNITS, service_area)["business_unit"].unique()
+)
 if st.session_state.get("business_unit") not in business_units:
     st.session_state["business_unit"] = ALL_BUSINESS_UNITS
 business_unit = st.sidebar.selectbox("Business Unit", business_units, key="business_unit")
 
-view = filter_view(df, month, business_unit)
+view = filter_view(df, month, business_unit, service_area)
 
 account_options = sorted(view["account_name"].unique())
 namespace_options = sorted(view["tag_namespace"].unique())
@@ -108,24 +117,19 @@ selected_accounts = st.sidebar.multiselect(
 selected_namespaces = st.sidebar.multiselect(
     "Namespaces", namespace_options, key="namespace_filter", placeholder="All namespaces"
 )
-history = df
-if business_unit != ALL_BUSINESS_UNITS:
-    history = history[history["business_unit"] == business_unit]
-if selected_accounts:
-    history = history[history["account_name"].isin(selected_accounts)]
-if selected_namespaces:
-    history = history[history["tag_namespace"].isin(selected_namespaces)]
+history = filter_history(df, service_area, business_unit, selected_accounts, selected_namespaces)
 view = history[history["billing_period"] == month]
 
 account_scope = ", ".join(selected_accounts) or "All accounts"
 namespace_scope = ", ".join(selected_namespaces) or "All namespaces"
+filter_scope = f"Service Area: {service_area}. Accounts: {account_scope}. Namespaces: {namespace_scope}."
 st.caption(
-    f"Month: {month}. Business Unit: {business_unit}. "
+    f"Month: {month}. Service Area: {service_area}. Business Unit: {business_unit}. "
     f"Accounts: {account_scope}. Namespaces: {namespace_scope}. {len(view):,} rows."
 )
 
 if view.empty:
-    st.info("No rows match the selected filters. Clear an account or namespace selection, or choose another month or business unit.")
+    st.info("No rows match the selected filters. Clear an account or namespace selection, or choose another month, service area or business unit.")
     st.stop()
 
 # -----------------------------
@@ -189,7 +193,7 @@ def report_table(data, description, report_name):
         table_data,
         hide_index=True,
         column_config=columns,
-        alt=f"{description} Accounts: {account_scope}. Namespaces: {namespace_scope}.",
+        alt=f"{description} {filter_scope}",
     )
 
 
@@ -213,7 +217,7 @@ def show_chart(fig, description, **layout):
     fig.update_layout(font=dict(color="#0b0c0c"), paper_bgcolor="#ffffff", plot_bgcolor="#ffffff", **layout)
     st.plotly_chart(
         fig, width="stretch",
-        alt=f"{description} Accounts: {account_scope}. Namespaces: {namespace_scope}.",
+        alt=f"{description} {filter_scope}",
     )
 
 
@@ -299,7 +303,7 @@ tab_ytd, tab_trend, tab_forecast, tab_tags, tab_account, tab_type = st.tabs(
 
 with tab_ytd:
     st.subheader("Financial year-to-date spend")
-    st.caption(f"April-to-March financial year: {ytd.iloc[0]['billing_period']} to {month}. Current business unit, account and namespace filters apply.")
+    st.caption(f"April-to-March financial year: {ytd.iloc[0]['billing_period']} to {month}. Current service area, business unit, account and namespace filters apply.")
     if ytd_missing:
         st.info(
             f"Full YTD spend is not available. Missing months for this selection: {', '.join(ytd_missing)}. "
@@ -337,7 +341,7 @@ with tab_trend:
         trend_chart.update_xaxes(type="category", categoryorder="array", categoryarray=trend["billing_period"].tolist())
         st.plotly_chart(
             trend_chart, width="stretch",
-            alt=f"Monthly Hosting spend over 12 months ending {month}, {business_unit}. Missing months are gaps. Accounts: {account_scope}. Namespaces: {namespace_scope}.",
+            alt=f"Monthly spend over 12 months ending {month}, {business_unit}. Missing months are gaps. {filter_scope}",
         )
     report_table(
         trend,
@@ -358,8 +362,8 @@ with tab_forecast:
 # -----------------------------
 with tab_tags:
     st.info(
-        "Service Area via the AWS rule (cost category) is 100% by definition: every row here is in "
-        "the Hosting cost category. The dials show the share of cost that also carries each team tag."
+        "Service Area via the AWS rule (cost category) is 100% by definition: every row here is assigned "
+        "a Service Area cost category. The dials show the share of cost that also carries each team tag."
     )
     coverage = tagging_coverage(view)
     if coverage["pct_tagged"].notna().any():
@@ -396,7 +400,7 @@ with tab_account:
     st.subheader("Spend by account")
     bar_chart(
         top_accounts, "account_name", "spend_usd", "Spend (USD)", money,
-        f"Bar chart of Hosting spend by account for {month}, filtered to {business_unit}, highest first: "
+        f"Bar chart of spend by account for {month}, filtered to {business_unit}, highest first: "
         + "; ".join(f"{row.account_name} {money(row.spend_usd)}" for row in top_accounts.itertuples()) + ".",
     )
     st.subheader("All accounts")
@@ -421,7 +425,7 @@ with tab_type:
         largest = by_type.iloc[0]
         donut_chart(
             by_type, "service_type", "Remaining service types",
-            f"Donut chart of Hosting spend by service category for {month}, filtered to {business_unit}. "
+            f"Donut chart of spend by service category for {month}, filtered to {business_unit}. "
             f"Largest: {largest.service_type} at {pct(largest.pct_of_total)}. Smaller categories may be grouped; "
             "the table below lists every category.",
         )
@@ -429,7 +433,7 @@ with tab_type:
         st.info(PART_TO_WHOLE_FALLBACK)
         bar_chart(
             by_type, "service_type", "spend_usd", "Spend (USD)", money,
-            f"Hosting spend by service category for {month}, filtered to {business_unit}. "
+            f"spend by service category for {month}, filtered to {business_unit}. "
             "Amounts are in US dollars. The table below contains the values.",
         )
     report_table(
