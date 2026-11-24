@@ -16,6 +16,7 @@ from hosting_report import (
     largest_with_remainder,
     monthly_spend,
     spend_by_account,
+    spend_by_account_aws_service,
     spend_by_namespace,
     spend_by_namespace_service_type,
     spend_by_service_type,
@@ -148,6 +149,7 @@ TABLE_COLUMNS = {
     "account_name": "Account",
     "tag_namespace": "Namespace",
     "service_type": "Service type",
+    "product_name": "AWS service",
     "tag": "Tag",
     "spend_usd": st.column_config.NumberColumn(
         "Spend (USD)", format="dollar"
@@ -447,6 +449,13 @@ with tab_type:
         by_type,
         f"Service category spending for {month}, {business_unit}: USD and share of total spend.",
         "service-types",
+    )
+    st.subheader("Per account")
+    st.caption("Every AWS service as its own row, grouped by account then service type. Percentages are a share of the account's spend.")
+    report_table(
+        spend_by_account_aws_service(view),
+        f"AWS service breakdown for each account in the current selection, {month}, {business_unit}: USD and share of each account's spend.",
+        "account-services",
     )
     st.subheader("Per namespace")
     if view["tag_namespace"].str.strip().str.lower().isin(["", "untagged"]).any():

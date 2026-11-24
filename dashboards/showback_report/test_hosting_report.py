@@ -17,6 +17,7 @@ from hosting_report import (
     monthly_spend,
     service_type,
     spend_by_account,
+    spend_by_account_aws_service,
     spend_by_account_service_type,
     spend_by_business_unit,
     spend_by_namespace,
@@ -91,6 +92,7 @@ def test_spend_shares_preserve_negative_and_undefined_cases(costs):
 
 @pytest.mark.parametrize("report,group_column,percentage", [
     (spend_by_account_service_type, "account_name", "pct_of_account"),
+    (spend_by_account_aws_service, "account_name", "pct_of_account"),
     (spend_by_namespace_service_type, "tag_namespace", "pct_of_namespace"),
 ])
 def test_largest_remainders_are_independent_per_group(report, group_column, percentage):
@@ -184,6 +186,27 @@ def test_namespace_service_type_shares():
     assert out.spend_usd.sum() == 150
     assert out.pct_of_namespace.tolist() == pytest.approx([75, 25, 100])
     assert out.service_type.tolist() == ["Compute", "Storage", "Other"]
+
+
+def test_account_aws_service_rows_grouped_by_account_then_category():
+    source = pd.DataFrame({
+        "account_name": ["b", "a", "a", "a", "a"],
+        "product_name": [
+            "Amazon Simple Storage Service", "Amazon Relational Database Service",
+            "AWS Lambda", "Amazon Elastic Compute Cloud", "Amazon Elastic Compute Cloud",
+        ],
+        "spend_usd": [50, 30, 10, 40, 20],
+    })
+    out = spend_by_account_aws_service(source)
+    assert out.columns.tolist() == ["account_name", "service_type", "product_name", "spend_usd", "pct_of_account"]
+    assert out.account_name.tolist() == ["a", "a", "a", "b"]
+    assert out.service_type.tolist() == ["Compute", "Compute", "Database", "Storage"]
+    assert out.product_name.tolist() == [
+        "Amazon Elastic Compute Cloud", "AWS Lambda", "Amazon Relational Database Service",
+        "Amazon Simple Storage Service",
+    ]
+    assert out.spend_usd.tolist() == [60, 10, 30, 50]
+    assert out.pct_of_account.tolist() == pytest.approx([60, 10, 30, 100])
 
 
 def test_largest_with_remainder_groups_small_categories():
