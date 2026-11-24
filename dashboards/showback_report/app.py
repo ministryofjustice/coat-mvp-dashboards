@@ -1,3 +1,4 @@
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
@@ -17,10 +18,12 @@ from hosting_report import (
     monthly_spend,
     spend_by_account,
     spend_by_account_aws_service,
+    spend_by_account_service_type,
     spend_by_namespace,
     spend_by_namespace_service_type,
     spend_by_service_type,
     tagging_coverage,
+    top_accounts_by_spend,
     top_with_remainder,
 )
 from local_data_input import manual_file_upload
@@ -139,6 +142,7 @@ if view.empty:
 # GSS accessible categorical palette.
 CATEGORY_COLOURS = ["#12436D", "#28A197", "#801650", "#F46A25", "#3D3D3D", "#A285D1"]
 BAR_COLOUR = CATEGORY_COLOURS[0]
+DEFAULT_SERVICE_ACCOUNTS = 5
 PART_TO_WHOLE_FALLBACK = (
     "Net credits or a zero total can't be shown as parts of a whole, so a bar chart is shown instead."
 )
@@ -163,6 +167,9 @@ TABLE_COLUMNS = {
     "pct_of_namespace": st.column_config.ProgressColumn(
         "Share of namespace spend (%)", format="%.1f%%", min_value=0, max_value=100, color="#1d70b8"
     ),
+    "pct_of_category": st.column_config.ProgressColumn(
+        "Share of service type spend (%)", format="%.1f%%", min_value=0, max_value=100, color="#1d70b8"
+    ),
     "tagged_usage_cost_usd": st.column_config.NumberColumn(
         "Tagged usage cost (USD)", format="dollar"
     ),
@@ -178,7 +185,7 @@ TABLE_COLUMNS = {
 def report_table(data, description, report_name):
     table_data = data.replace([float("inf"), float("-inf")], float("nan"))
     columns = TABLE_COLUMNS.copy()
-    for column in ("pct_of_total", "pct_of_account", "pct_of_namespace", "pct_tagged"):
+    for column in ("pct_of_total", "pct_of_account", "pct_of_namespace", "pct_of_category", "pct_tagged"):
         if column not in table_data:
             continue
         within_tolerance = table_data[column].between(-1e-9, 100 + 1e-9)
@@ -451,12 +458,38 @@ with tab_type:
         "service-types",
     )
     st.subheader("Per account")
-    st.caption("Every AWS service as its own row, grouped by account then service type. Percentages are a share of the account's spend.")
-    report_table(
-        spend_by_account_aws_service(view),
-        f"AWS service breakdown for each account in the current selection, {month}, {business_unit}: USD and share of each account's spend.",
-        "account-services",
-    )
+    if selected_accounts:
+        shown_accounts = top_accounts_by_spend(view)
+        st.caption("AWS services in each selected account, grouped by service type. The bar next to each service type is its share of the account's spend.")
+    else:
+        shown_accounts = top_accounts_by_spend(view, DEFAULT_SERVICE_ACCOUNTS)
+        st.caption(
+            f"Showing the {len(shown_accounts)} accounts with the highest spend. "
+            "Select accounts in the sidebar to see specific ones. "
+            "The bar next to each service type is its share of the account's spend."
+        )
+    account_categories = spend_by_account_service_type(view)
+    account_services = spend_by_account_aws_service(view)
+    for account in shown_accounts:
+        st.markdown(f"#### {account}")
+        services = account_services[account_services["account_name"] == account]
+        for category in account_categories[account_categories["account_name"] == account].itertuples():
+            category_services = services[services["service_type"] == category.service_type]
+            count = len(category_services)
+            label_column, spend_column, share_column = st.columns([3, 1, 3], vertical_alignment="center")
+            label_column.markdown(f"**{category.service_type}** ({count} service{'' if count == 1 else 's'})")
+            spend_column.markdown(money(category.spend_usd))
+            if 0 <= category.pct_of_account <= 100:
+                share_column.progress(category.pct_of_account / 100, text=pct(category.pct_of_account))
+            elif pd.isna(category.pct_of_account):
+                share_column.markdown("Share not available")
+            else:
+                share_column.markdown(pct(category.pct_of_account))
+            report_table(
+                category_services[["product_name", "spend_usd", "pct_of_category"]],
+                f"AWS services in the {category.service_type} service type for account {account}, {month}: USD and share of the service type's spend.",
+                f"account-services-{account}-{category.service_type}",
+            )
     st.subheader("Per namespace")
     if view["tag_namespace"].str.strip().str.lower().isin(["", "untagged"]).any():
         st.info("Some rows have no namespace attribution. Their costs remain in the untagged group and will be attributed when namespace tags are supplied in the Athena table.")

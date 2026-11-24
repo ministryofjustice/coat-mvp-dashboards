@@ -200,19 +200,27 @@ def spend_by_account_service_type(view: pd.DataFrame) -> pd.DataFrame:
 
 
 def spend_by_account_aws_service(view: pd.DataFrame) -> pd.DataFrame:
-    """One row per account, service category and AWS service (product_name), with share of account spend.
+    """One row per account, service category and AWS service (product_name),
+    with share of account spend and share of category spend.
 
     Sorted by account, then category by its spend within the account, then service by spend.
     """
     typed = view.assign(service_type=view["product_name"].map(service_type))
     out = typed.groupby(["account_name", "service_type", "product_name"], as_index=False)["spend_usd"].sum()
     out = _with_pct(out, "pct_of_account", by="account_name")
+    out = _with_pct(out, "pct_of_category", by=["account_name", "service_type"])
     category_spend = out.groupby(["account_name", "service_type"])["spend_usd"].transform("sum")
     order = out.assign(_category_spend=category_spend).sort_values(
         ["account_name", "_category_spend", "service_type", "spend_usd"],
         ascending=[True, False, True, False], kind="stable",
     ).index
     return out.loc[order].reset_index(drop=True)
+
+
+def top_accounts_by_spend(view: pd.DataFrame, limit: int | None = None) -> list[str]:
+    """Account names ordered by total spend, highest first; the first `limit` of them when given."""
+    totals = view.groupby("account_name")["spend_usd"].sum().sort_values(ascending=False, kind="stable")
+    return totals.index[:limit].tolist()
 
 
 def spend_by_namespace_service_type(view: pd.DataFrame) -> pd.DataFrame:
