@@ -112,10 +112,12 @@ for filter_key, options in (
         value for value in st.session_state.get(filter_key, []) if value in options
     ]
 selected_accounts = st.sidebar.multiselect(
-    "Accounts", account_options, key="account_filter", placeholder="All accounts"
+    "Accounts", account_options, key="account_filter", placeholder="All accounts",
+    help="The cloud account where a team runs and manages its cloud resources. It contains the applications, data, and services owned by a team.",
 )
 selected_namespaces = st.sidebar.multiselect(
-    "Namespaces", namespace_options, key="namespace_filter", placeholder="All namespaces"
+    "Namespaces", namespace_options, key="namespace_filter", placeholder="All namespaces",
+    help="A namespace represents a specific service or application within the MOJ Cloud Platform, allowing usage, costs, and resources to be tracked and managed independently.",
 )
 history = filter_history(df, service_area, business_unit, selected_accounts, selected_namespaces)
 view = history[history["billing_period"] == month]
@@ -397,6 +399,13 @@ with tab_tags:
 # 6. By account / namespace
 # -----------------------------
 with tab_account:
+    st.info(
+        "**Account:** The cloud account where a team runs and manages its cloud resources. "
+        "It contains the applications, data, and services owned by a team.\n\n"
+        "**Namespace:** A namespace represents a specific service or application within the "
+        "MOJ Cloud Platform, allowing usage, costs, and resources to be tracked and managed independently.\n\n"
+        "**Note:** Spend related to namespaces are related to Cloud Platform in the list of accounts."
+    )
     by_account = spend_by_account(view)
     account_totals = (
         by_account.groupby("account_name", as_index=False)["spend_usd"]
