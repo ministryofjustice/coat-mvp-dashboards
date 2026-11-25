@@ -182,9 +182,20 @@ TABLE_COLUMNS = {
 }
 
 
-def report_table(data, description, report_name):
+# Fixed widths so the per-account service tables line up with each other.
+ACCOUNT_SERVICE_COLUMNS = {
+    "product_name": st.column_config.TextColumn("AWS service", width="large"),
+    "spend_usd": st.column_config.NumberColumn("Spend (USD)", format="dollar", width="medium"),
+    "pct_of_category": st.column_config.ProgressColumn(
+        "Share of service type spend (%)", format="%.1f%%", min_value=0, max_value=100,
+        color="#1d70b8", width="large",
+    ),
+}
+
+
+def report_table(data, description, report_name, column_overrides=None):
     table_data = data.replace([float("inf"), float("-inf")], float("nan"))
-    columns = TABLE_COLUMNS.copy()
+    columns = {**TABLE_COLUMNS, **(column_overrides or {})}
     for column in ("pct_of_total", "pct_of_account", "pct_of_namespace", "pct_of_category", "pct_tagged"):
         if column not in table_data:
             continue
@@ -478,7 +489,7 @@ with tab_type:
             count = len(category_services)
             label_column, spend_column, share_column = st.columns([3, 1, 3], vertical_alignment="center")
             label_column.markdown(f"**{category.service_type}** ({count} service{'' if count == 1 else 's'})")
-            spend_column.markdown(money(category.spend_usd))
+            spend_column.markdown(f"${category.spend_usd:,.2f}")
             if 0 <= category.pct_of_account <= 100:
                 share_column.progress(category.pct_of_account / 100, text=pct(category.pct_of_account))
             elif pd.isna(category.pct_of_account):
@@ -489,6 +500,7 @@ with tab_type:
                 category_services[["product_name", "spend_usd", "pct_of_category"]],
                 f"AWS services in the {category.service_type} service type for account {account}, {month}: USD and share of the service type's spend.",
                 f"account-services-{account}-{category.service_type}",
+                ACCOUNT_SERVICE_COLUMNS,
             )
     st.subheader("Per namespace")
     if view["tag_namespace"].str.strip().str.lower().isin(["", "untagged"]).any():
