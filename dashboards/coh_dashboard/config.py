@@ -1,12 +1,8 @@
 import os
 
-AUTH0_CLIENT_ID = os.getenv("AUTH0_CLIENT_ID")
+APP_ENV = os.getenv("APP_ENV", "dev")
 
-AUTH0_CLIENT_SECRET = os.getenv("AUTH0_CLIENT_SECRET")
-
-AUTH0_DOMAIN = (os.getenv("AUTH0_DOMAIN") or "").strip().rstrip("/")
-
-APP_ENV = os.getenv("APP_ENV")
+DASHBOARD_NAME = "AWS Cost Optimization Hub Dashboard"
 
 AUTH_DISABLED = (os.getenv("AUTH_DISABLED") or "").strip().lower() in {
     "1",
