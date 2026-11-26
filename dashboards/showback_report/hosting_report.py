@@ -18,8 +18,6 @@ TAG_COLUMNS = [
     ("application", "tagged_application_usage_cost_usd"),
     ("owner", "tagged_owner_usage_cost_usd"),
     ("is_production", "tagged_is_production_usage_cost_usd"),
-    ("environment_name", "tagged_environment_name_usage_cost_usd"),
-    ("namespace", "tagged_namespace_usage_cost_usd"),
 ]
 
 # Same product-to-category list as showback_scope.html section 7.

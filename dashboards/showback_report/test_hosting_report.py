@@ -52,6 +52,9 @@ def test_spend_by_business_unit(df):
 
 def test_tagging_coverage_september(df):
     out = tagging_coverage(filter_view(df, "2026-09", ALL_BUSINESS_UNITS)).set_index("tag")
+    assert out.index.tolist() == [
+        "service_area", "business_unit", "application", "owner", "is_production",
+    ]
     assert out.loc["service_area", "taggable_usage_cost_usd"] == pytest.approx(2015.0)
     assert out.loc["service_area", "pct_tagged"] == pytest.approx(100 * 2002 / 2015)
     assert out.loc["application", "pct_tagged"] == pytest.approx(100 * 442 / 2015)

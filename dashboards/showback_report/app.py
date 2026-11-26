@@ -393,7 +393,7 @@ with tab_forecast:
 with tab_tags:
     st.info(
         "Service Area via the AWS rule (cost category) is 100% by definition: every row here is assigned "
-        "a Service Area cost category. The dials show the share of cost that also carries each team tag."
+        "a Service Area cost category. The dials show the share of cost that also carries each mandatory tag."
     )
     coverage = tagging_coverage(view)
     if coverage["pct_tagged"].notna().any():

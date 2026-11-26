@@ -175,7 +175,7 @@ def test_percentage_boundary_tolerance(app_factory, percentage, expected_type, e
     table = next(table for table in app.dataframe if "pct_tagged" in table.value)
     column = json.loads(table.proto.columns)["pct_tagged"]
     assert column["type_config"]["type"] == expected_type
-    assert table.value.pct_tagged.tolist() == pytest.approx([expected_value] * 7)
+    assert table.value.pct_tagged.tolist() == pytest.approx([expected_value] * 5)
     assert any("outside 0-100%" in item.value for item in app.info) == (expected_type == "number")
 
 
@@ -253,23 +253,23 @@ def test_single_month_trend_and_april_ytd(app_factory):
     app = app_factory("source = source[source.billing_period == '2026-09'].assign(billing_period='2026-04')")
     assert any("A spend trend is not yet available" in item.value for item in app.info)
     assert next(metric.value for metric in app.metric if metric.label == "YTD spend (USD)") == "$1,550.00"
-    assert [trace["type"] for trace in chart_traces(app)] == ["indicator"] * 7 + ["bar", "pie"]
+    assert [trace["type"] for trace in chart_traces(app)] == ["indicator"] * 5 + ["bar", "pie"]
 
 
 def test_chart_types_are_diversified(app_factory):
     app = app_factory()
     traces = chart_traces(app)
-    assert [trace["type"] for trace in traces] == ["scatter"] + ["indicator"] * 7 + ["bar", "pie"]
+    assert [trace["type"] for trace in traces] == ["scatter"] + ["indicator"] * 5 + ["bar", "pie"]
     source = read_hosting_csv(SAMPLE)
     coverage = tagging_coverage(source[source.billing_period == "2026-09"])
-    dials = traces[1:8]
+    dials = traces[1:6]
     assert [dial["title"]["text"] for dial in dials] == coverage.tag.tolist()
     assert [dial["value"] for dial in dials] == pytest.approx(coverage.pct_tagged.tolist())
     assert all(dial["gauge"]["axis"]["range"] == [0, 100] for dial in dials)
-    accounts, donut = traces[8:]
+    accounts, donut = traces[6:]
     assert accounts["y"][::-1] == ["example-platform-prod", "example-probation-dev", "example-unassigned"]
     assert sum(decoded(accounts["x"])) == pytest.approx(1550)
-    assert "example-platform-prod $1,200; example-probation-dev $340" in app.get("plotly_chart")[8].proto.alt
+    assert "example-platform-prod $1,200; example-probation-dev $340" in app.get("plotly_chart")[6].proto.alt
     service_table = next(table.value for table in app.dataframe if {"service_type", "pct_of_total"} <= set(table.value))
     assert donut["labels"] == service_table.service_type.tolist()
     assert donut["text"] == [f"{value:.1f}%" for value in service_table.pct_of_total]
